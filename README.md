@@ -26,8 +26,8 @@ You can play the game directly in your browser:
 - **Goal:** Avoid the red cars for as long as possible.
 - **Controls:**
     - **Keyboard:** Press `A` / `←` (Left Arrow) to move left, `D` / `→` (Right Arrow) to move right.
-    - **Mouse/Touch:** Click the `◀ LEFT` and `RIGHT ▶` buttons on the screen.
-    - **Restart:** Press `R` on your keyboard or click the `🚴 RESTART` button.
+    - **Mouse/Touch:** Click the `◀ LEFT` and `RIGHT ` buttons on the screen.
+    - **Restart:** Press `R` on your keyboard or click the ` RESTART` button.
 
 - **Scoring:**
     - You gain `0.25` points every frame just for surviving.
@@ -75,7 +75,7 @@ bike-game/
 └── index.html      # Contains all HTML, CSS, and JavaScript
 ```
 
-## 🧠 Game Logic Overview
+##  Game Logic Overview
 
 - **Canvas Rendering:** The game runs at ~60 FPS using `requestAnimationFrame`.
 - **Collision Detection:** Axis-Aligned Bounding Box (AABB) collision between the player's bike and enemy cars.
@@ -85,7 +85,7 @@ bike-game/
     - `spawnDelay` decreases based on `score`, making cars appear more frequently.
 - **Persistent Storage:** The best score is saved after each game over and loaded when the page loads.
 
-## 🎨 Customization
+##  Customization
 
 Want to tweak the game? Open `index.html` in a code editor and modify these variables:
 
@@ -127,9 +127,4 @@ This project is open-source and available under the **MIT License**. You are fre
 Created by **Your Name** – feel free to reach out!
 
 - GitHub: [@your-username](https://github.com/your-username)
-- Project Link: [https://github.com/your-username/bike-game](https://github.com/your-username/bike-game)
-
----
-
-**Enjoy the ride, and don't crash!** 🚴💨
-```
+- Project Link: [https://github.com/your-username/bike-game](https://github.com/your-username/bike-game
