@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>City Rush: Bike Rider | Dodge Traffic Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0a2f2a 0%, #051f1b 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', 'Courier New', monospace;
+            touch-action: manipulation;
+        }
+
+        .game-container {
+            background: #1e2a2a;
+            border-radius: 2rem;
+            padding: 1rem;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.1);
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 1rem;
+            box-shadow: 0 0 0 3px #f4c542, 0 10px 25px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+        }
+
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-top: 1rem;
+            gap: 1.5rem;
+            background: #0f1a18d9;
+            backdrop-filter: blur(4px);
+            padding: 0.7rem 1.8rem;
+            border-radius: 3rem;
+            color: #fdebb3;
+            text-shadow: 0 2px 2px black;
+        }
+
+        .score-box, .best-box {
+            font-size: 1.6rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            background: #00000066;
+            padding: 0.2rem 1rem;
+            border-radius: 2rem;
+            font-family: monospace;
+        }
+
+        .score-box span, .best-box span {
+            font-size: 0.9rem;
+            font-weight: normal;
+            margin-right: 0.5rem;
+            color: #ffd966;
+        }
+
+        .restart-btn {
+            background: #f4c542;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 0.3rem 1.2rem;
+            border-radius: 2rem;
+            font-family: inherit;
+            cursor: pointer;
+            color: #1e2a2a;
+            transition: 0.2s;
+            box-shadow: 0 3px 0 #a45817;
+            transform: translateY(-2px);
+        }
+        .restart-btn:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        .controls {
+            margin-top: 0.9rem;
+            display: flex;
+            justify-content: center;
+            gap: 1.2rem;
+            background: #00000060;
+            padding: 0.5rem 1rem;
+            border-radius: 2.5rem;
+            backdrop-filter: blur(4px);
+        }
+
+        .ctrl-btn {
+            background: #2c3e3a;
+            border: none;
+            font-size: 1.8rem;
+            font-weight: bold;
+            padding: 0.3rem 1.2rem;
+            border-radius: 2rem;
+            color: #fadfaa;
+            cursor: pointer;
+            transition: 0.05s linear;
+            box-shadow: 0 3px 0 #0f1917;
+            touch-action: manipulation;
+            font-family: monospace;
+        }
+        .ctrl-btn:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        .status {
+            background: #000000aa;
+            padding: 0.2rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.9rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 550px) {
+            .ctrl-btn { font-size: 1.4rem; padding: 0.2rem 1rem; }
+            .score-box, .best-box { font-size: 1.2rem; }
+            .info-panel { gap: 0.8rem; padding: 0.4rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+<div>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="600" height="400"></canvas>
+        <div class="info-panel">
+            <div class="score-box"><span> SCORE</span> <span id="scoreValue">0</span></div>
+            <div class="best-box"><span> BEST</span> <span id="bestValue">0</span></div>
+            <button class="restart-btn" id="restartButton"> RESTART</button>
+        </div>
+        <div class="controls">
+            <button class="ctrl-btn" id="leftBtn">◀</button>
+            <div class="status"> USE A/D or ARROWS</div>
+            <button class="ctrl-btn" id="rightBtn">▶</button>
+        </div>
+        <div style="text-align: center; font-size: 0.7rem; margin-top: 0.5rem; color:#bbaa77;">← →  move bike · avoid red cars · survive!</div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // ----- CANVAS -----
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // ----- GAME DIMENSIONS -----
+        const LANE_COUNT = 5;
+        const LANE_WIDTH = canvas.width / LANE_COUNT;  // 120px each (600/5)
+        const PLAYER_WIDTH = 38;
+        const PLAYER_HEIGHT = 42;
+        const CAR_WIDTH = 46;
+        const CAR_HEIGHT = 52;
+        
+        // ----- GAME STATE -----
+        let gameRunning = true;
+        let score = 0;
+        let bestScore = 0;
+        
+        // Player lane index: 0 .. 4
+        let playerLane = 2;   // middle lane
+        
+        // Traffic array: each object = { lane, y, width, height, colorVariant }
+        let traffic = [];
+        
+        // Frame rate control & spawn timing
+        let frame = 0;
+        let spawnCounter = 0;
+        let baseSpawnDelay = 45;   // frames between spawn attempts (approx 0.75 sec at 60fps)
+        let dynamicSpawnDelay = baseSpawnDelay;
+        
+        // Speed settings: cars fall faster as score increases
+        let baseCarSpeed = 2.6;
+        let currentCarSpeed = baseCarSpeed;
+        
+        // Animation ID
+        let animationId = null;
+        
+        // ----- HELPER FUNCTIONS -----
+        function loadBestScore() {
+            const stored = localStorage.getItem('bikeGameBest');
+            if(stored && !isNaN(parseInt(stored))) {
+                bestScore = parseInt(stored);
+            } else {
+                bestScore = 0;
+            }
+            document.getElementById('bestValue').innerText = bestScore;
+        }
+        
+        function saveBestScore() {
+            if(score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('bikeGameBest', bestScore);
+                document.getElementById('bestValue').innerText = bestScore;
+            }
+        }
+        
+        function updateScoreUI() {
+            document.getElementById('scoreValue').innerText = Math.floor(score);
+        }
+        
+        // Spawn a new car (enemy)
+        function spawnCar() {
+            // random lane (0 to 4)
+            const lane = Math.floor(Math.random() * LANE_COUNT);
+            // slight variation in color: red, darkred, maroon
+            const variant = Math.floor(Math.random() * 3);
+            traffic.push({
+                lane: lane,
+                y: -CAR_HEIGHT - Math.random() * 50, // start above canvas
+                width: CAR_WIDTH,
+                height: CAR_HEIGHT,
+                colorVariant: variant
+            });
+        }
+        
+        // update traffic movement and collision
+        function updateTraffic() {
+            // 1. Move cars downwards
+            for(let i=0; i<traffic.length; i++) {
+                traffic[i].y += currentCarSpeed;
+            }
+            // 2. Remove cars that passed bottom (outside canvas)
+            traffic = traffic.filter(car => car.y < canvas.height + 200);
+            
+            // 3. collision detection (player vs cars)
+            const playerX = playerLane * LANE_WIDTH + (LANE_WIDTH/2) - PLAYER_WIDTH/2;
+            const playerY = canvas.height - PLAYER_HEIGHT - 10;  // fixed Y near bottom
+            const playerRect = {
+                x: playerX,
+                y: playerY,
+                w: PLAYER_WIDTH,
+                h: PLAYER_HEIGHT
+            };
+            
+            for(let i=0; i<traffic.length; i++) {
+                const car = traffic[i];
+                const carX = car.lane * LANE_WIDTH + (LANE_WIDTH/2) - car.width/2;
+                const carRect = {
+                    x: carX,
+                    y: car.y,
+                    w: car.width,
+                    h: car.height
+                };
+                
+                // AABB collision
+                if(playerRect.x < carRect.x + carRect.w &&
+                   playerRect.x + playerRect.w > carRect.x &&
+                   playerRect.y < carRect.y + carRect.h &&
+                   playerRect.y + playerRect.h > carRect.y) {
+                    gameRunning = false;
+                    return; // stop collision checking further
+                }
+            }
+        }
+        
+        // scoring based on cars safely passed & distance
+        function updateScoring() {
+            if(!gameRunning) return;
+            // increment score gradually over time (survival points)
+            score += 0.2;
+            // bonus: each car that goes beyond player without collision gives extra?
+            // we'll give soft increment per car that goes offscreen safely.
+            // simpler: just steady increase plus dynamic bonus for distance.
+            // extra thrill: for each car that exits bottom give +5? but we'll do per frame smooth + avoid overflow.
+            // Also track unique safe passes: we'll use a Set to prevent re-adding same car? but simpler:
+            // we can just add small survival driven score.
+            // However we want rewarding: each frame safe adds 0.2 and we also give extra when a car leaves entirely.
+            // In filter we already removed cars y > canvas.height, we can count those as passed.
+            // Let's do it elegantly: store a flag per car that it gave bonus? but not necessary, we can compute difference in array length?
+            // Better: Use a separate variable to count passed cars.
+        }
+        
+        // advanced scoring: count cars that moved past the bottom without collision
+        let lastTrafficCount = 0;
+        let passedCarsCount = 0;
+        function handlePassedCarsBonus() {
+            if(!gameRunning) return;
+            // count how many cars have y > canvas.height previously? we already filtered out.
+            // we keep a temporary record: but easier: each car when removed (if y>canvas.height) we trigger bonus.
+            // we will modify updateTraffic removal part to give score. To keep clean architecture, we'll adjust inside updateTraffic.
+        }
+        
+        // We'll override updateTraffic to also give score on safe pass
+        const originalUpdateTraffic = updateTraffic;
+        // but instead of overriding dangerous, we'll rebuild the logic with scoring while removing.
+        // let's create a new unified update method that does move, removal + score on exit, and collision.
+        function gameUpdate() {
+            if(!gameRunning) return;
+            
+            // 1. move cars
+            for(let i=0; i<traffic.length; i++) {
+                traffic[i].y += currentCarSpeed;
+            }
+            
+            // 2. Process removal & give score for cars that left safely (bottom)
+            const newTraffic = [];
+            for(let i=0; i<traffic.length; i++) {
+                const car = traffic[i];
+                if(car.y > canvas.height + 60) {
+                    // This car passed beyond the bottom edge -> safe pass bonus!
+                    score += 8;
+                    updateScoreUI();
+                    saveBestScore(); // update best if needed
+                    continue; // skip adding back, effectively removed
+                }
+                newTraffic.push(car);
+            }
+            traffic = newTraffic;
+            
+            // 3. Collision check (player vs remaining cars)
+            const playerX = playerLane * LANE_WIDTH + (LANE_WIDTH/2) - PLAYER_WIDTH/2;
+            const playerY = canvas.height - PLAYER_HEIGHT - 10;
+            const playerRect = { x: playerX, y: playerY, w: PLAYER_WIDTH, h: PLAYER_HEIGHT };
+            
+            for(let i=0; i<traffic.length; i++) {
+                const car = traffic[i];
+                const carX = car.lane * LANE_WIDTH + (LANE_WIDTH/2) - car.width/2;
+                const carRect = { x: carX, y: car.y, w: car.width, h: car.height };
+                
+                if(playerRect.x < carRect.x + carRect.w &&
+                   playerRect.x + playerRect.w > carRect.x &&
+                   playerRect.y < carRect.y + carRect.h &&
+                   playerRect.y + playerRect.h > carRect.y) {
+                    gameRunning = false;
+                    return;
+                }
+            }
+            
+            // 4. survival score over time 
+            score += 0.25;
+            updateScoreUI();
+            saveBestScore();
+            
+            // 5. dynamic difficulty: speed & spawn rate based on score
+            let difficultyFactor = Math.min(2.2, 1 + Math.floor(score / 380));
+            currentCarSpeed = baseCarSpeed + difficultyFactor * 0.9;
+            let spawnReduction = Math.floor(score / 280);
+            let newSpawnDelay = Math.max(22, baseSpawnDelay - spawnReduction * 3);
+            dynamicSpawnDelay = newSpawnDelay;
+        }
+        
+        // spawn manager
+        function manageSpawning() {
+            if(!gameRunning) return;
+            // spawn based on dynamicSpawnDelay
+            if(spawnCounter <= 0) {
+                // a bit random to not feel robotic
+                if(Math.random() < 0.68) {  // 68% chance to spawn when counter ready
+                    spawnCar();
+                }
+                // reset counter with dynamic delay + small random jitter
+                spawnCounter = dynamicSpawnDelay + Math.floor(Math.random() * 12);
+            } else {
+                spawnCounter--;
+            }
+        }
+        
+        // ----- DRAW EVERYTHING (with style!) -----
+        function drawRoad() {
+            // asphalt texture
+            ctx.fillStyle = "#1f2a24";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // lane markings (dashed lines)
+            ctx.beginPath();
+            ctx.strokeStyle = "#FFF6CF";
+            ctx.lineWidth = 3;
+            ctx.setLineDash([20, 30]);
+            for(let i=1; i<LANE_COUNT; i++) {
+                const x = i * LANE_WIDTH;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            ctx.setLineDash([]);
+            // edge glow lines
+            ctx.beginPath();
+            ctx.strokeStyle = "#e6c87a";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(5, 5, canvas.width-10, canvas.height-10);
+            
+            // road surface details: tiny dots
+            ctx.fillStyle = "#b9aa7a44";
+            for(let i=0;i<120;i++) {
+                ctx.fillRect((i*37)%canvas.width, (i*19)%canvas.height, 2, 2);
+            }
+        }
+        
+        function drawBike(x, y) {
+            // main bike body (cool bike!)
+            ctx.save();
+            ctx.shadowBlur = 6;
+            ctx.shadowColor = "#00000080";
+            // wheels
+            ctx.fillStyle = "#2C2E3E";
+            ctx.beginPath();
+            ctx.ellipse(x+8, y+PLAYER_HEIGHT-8, 8, 8, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(x+PLAYER_WIDTH-8, y+PLAYER_HEIGHT-8, 8, 8, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#44475a";
+            ctx.beginPath();
+            ctx.ellipse(x+8, y+PLAYER_HEIGHT-8, 5, 5, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(x+PLAYER_WIDTH-8, y+PLAYER_HEIGHT-8, 5, 5, 0, 0, Math.PI*2);
+            ctx.fill();
+            // frame
+            ctx.fillStyle = "#FFB347";
+            ctx.shadowColor = "#402e1a";
+            ctx.fillRect(x+6, y+12, PLAYER_WIDTH-12, 18);
+            ctx.fillStyle = "#f57c00";
+            ctx.fillRect(x+4, y+18, 8, 12);
+            ctx.fillRect(x+PLAYER_WIDTH-12, y+18, 8, 12);
+            // seat
+            ctx.fillStyle = "#6B3E1A";
+            ctx.fillRect(x+12, y+8, 16, 8);
+            // handlebar
+            ctx.beginPath();
+            ctx.strokeStyle = "#2A2F36";
+            ctx.lineWidth = 4;
+            ctx.moveTo(x+12, y+12);
+            ctx.lineTo(x+20, y+5);
+            ctx.lineTo(x+28, y+12);
+            ctx.stroke();
+            // rider helmet
+            ctx.fillStyle = "#E0B45C";
+            ctx.beginPath();
+            ctx.ellipse(x+PLAYER_WIDTH/2, y+5, 12, 11, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#2C2E3E";
+            ctx.beginPath();
+            ctx.arc(x+PLAYER_WIDTH/2-3, y+4, 2, 0, Math.PI*2);
+            ctx.arc(x+PLAYER_WIDTH/2+3, y+4, 2, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = "#F5CBA7";
+            ctx.beginPath();
+            ctx.ellipse(x+PLAYER_WIDTH/2, y+8, 5, 4, 0, 0, Math.PI*2);
+            ctx.fill();
+            ctx.restore();
+        }
+        
+        function drawCar(car) {
+            const x = car.lane * LANE_WIDTH + (LANE_WIDTH/2) - car.width/2;
+            const y = car.y;
+            ctx.save();
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = "black";
+            let bodyColor = "#c22d2d";
+            if(car.colorVariant === 1) bodyColor = "#a12222";
+            if(car.colorVariant === 2) bodyColor = "#8b1a1a";
+            ctx.fillStyle = bodyColor;
+            ctx.fillRect(x, y, car.width, car.height);
+            ctx.fillStyle = "#3a2a1f";
+            ctx.fillRect(x+5, y+8, car.width-10, 12);
+            ctx.fillStyle = "#575a5e";
+            ctx.fillRect(x+8, y+car.height-12, 8, 8);
+            ctx.fillRect(x+car.width-16, y+car.height-12, 8, 8);
+            ctx.fillStyle = "#ffcc66";
+            ctx.fillRect(x+8, y+5, 7, 7);
+            ctx.fillRect(x+car.width-15, y+5, 7, 7);
+            // windows
+            ctx.fillStyle = "#88c0ff";
+            ctx.fillRect(x+8, y+14, 10, 14);
+            ctx.fillRect(x+car.width-18, y+14, 10, 14);
+            ctx.restore();
+        }
+        
+        function drawGame() {
+            drawRoad();
+            // draw traffic cars
+            for(let car of traffic) {
+                drawCar(car);
+            }
+            // draw player bike (using lane)
+            const bikeX = playerLane * LANE_WIDTH + (LANE_WIDTH/2) - PLAYER_WIDTH/2;
+            const bikeY = canvas.height - PLAYER_HEIGHT - 10;
+            drawBike(bikeX, bikeY);
+            
+            // HUD overlay if game over
+            if(!gameRunning) {
+                ctx.font = "bold 34monospace";
+                ctx.shadowBlur=0;
+                ctx.fillStyle = "#FFD966";
+                ctx.shadowColor = "#6b1a00";
+                ctx.fillText(" CRASH!", canvas.width/2-100, canvas.height/2-40);
+                ctx.font = "bold 20px 'Segoe UI'";
+                ctx.fillStyle = "#FFE0A3";
+                ctx.fillText("click RESTART or press R", canvas.width/2-130, canvas.height/2+30);
+            }
+            // Draw lane helper (speed shine)
+            ctx.font = "bold 12px monospace";
+            ctx.fillStyle = "#eedd99";
+            ctx.fillText(" SCORE: "+Math.floor(score), 12, 30);
+            ctx.fillStyle = "#bbaa77";
+            ctx.fillText("SPEED: "+currentCarSpeed.toFixed(1), canvas.width-90, 30);
+        }
+        
+        // ----- GAME LOOP -----
+        function gameLoop() {
+            if(gameRunning) {
+                gameUpdate();      // update movement, collision, scoring
+                manageSpawning();  // spawn new enemy cars
+            }
+            drawGame();
+            animationId = requestAnimationFrame(gameLoop);
+        }
+        
+        // ----- CONTROLS & LANE MOVEMENT -----
+        function moveLeft() {
+            if(!gameRunning) return;
+            if(playerLane > 0) {
+                playerLane--;
+            }
+        }
+        function moveRight() {
+            if(!gameRunning) return;
+            if(playerLane < LANE_COUNT-1) {
+                playerLane++;
+            }
+        }
+        
+        // ----- RESET GAME FULLY -----
+        function restartGame() {
+            gameRunning = true;
+            score = 0;
+            playerLane = 2;
+            traffic = [];
+            frame = 0;
+            spawnCounter = 8;   // quick start
+            currentCarSpeed = baseCarSpeed;
+            dynamicSpawnDelay = baseSpawnDelay;
+            updateScoreUI();
+            saveBestScore(); // update ui best but keep bestScore var
+            document.getElementById('scoreValue').innerText = "0";
+            // make sure best display is correct
+            document.getElementById('bestValue').innerText = bestScore;
+            // small cleanup: ensure no pending ghost states
+        }
+        
+        // ----- EVENT LISTENERS (keyboard + buttons + touch)-----
+        function handleKeydown(e) {
+            const key = e.key;
+            if(key === 'ArrowLeft' || key === 'a' || key === 'A') {
+                moveLeft();
+                e.preventDefault();
+            } else if(key === 'ArrowRight' || key === 'd' || key === 'D') {
+                moveRight();
+                e.preventDefault();
+            } else if(key === 'r' || key === 'R') {
+                restartGame();
+                e.preventDefault();
+            }
+        }
+        
+        // ----- MOBILE/TOUCH BUTTON HANDLERS-----
+        function initUIButtons() {
+            const leftBtn = document.getElementById('leftBtn');
+            const rightBtn = document.getElementById('rightBtn');
+            const restartBtn = document.getElementById('restartButton');
+            
+            leftBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                moveLeft();
+            });
+            rightBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                moveRight();
+            });
+            restartBtn.addEventListener('click', () => {
+                restartGame();
+            });
+            // touchstart to avoid delay
+            leftBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                moveLeft();
+            });
+            rightBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                moveRight();
+            });
+            restartBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                restartGame();
+            });
+        }
+        
+        window.addEventListener('keydown', handleKeydown);
+        
+        // initialize best and start
+        loadBestScore();
+        restartGame();   // set initial fresh state
+        initUIButtons();
+        // start the animation
+        animationId = requestAnimationFrame(gameLoop);
+    })();
+</script>
+</body>
+</html>
