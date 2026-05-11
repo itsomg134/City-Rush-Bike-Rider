@@ -106,7 +106,7 @@ Want to tweak the game? Open `index.html` in a code editor and modify these vari
 - Add power-ups (slow motion, invincibility, score multiplier).
 - Implement a "night mode" with dynamic lighting.
 
-## 🤝 Contributing
+##  Contributing
 
 Contributions are welcome! If you have ideas for improvements or find a bug, feel free to:
 
