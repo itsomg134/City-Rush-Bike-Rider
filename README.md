@@ -8,7 +8,6 @@ City Rush is an fast-paced, lane-based bike dodging game built with pure HTML, C
 ##  Play Now
 
 You can play the game directly in your browser:  
- **[Click here to play City Rush: Bike Rider](https://your-username.github.io/bike-game)**  
 *(Replace the link with your actual GitHub Pages URL after deploying)*
 
 ##  Features
