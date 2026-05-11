@@ -3,8 +3,7 @@
 **Dodge traffic, set high scores, and survive the urban jungle!**  
 City Rush is an fast-paced, lane-based bike dodging game built with pure HTML, CSS, and JavaScript. Avoid incoming red cars, survive as long as possible, and beat your personal best.
 
-![Game Screenshot](https://via.placeholder.com/800x400?text=City+Rush+Gameplay+Preview)  
-*(Add a real screenshot of your game here for the best effect)*
+<img width="1900" height="901" alt="image" src="https://github.com/user-attachments/assets/fb4c5df5-b09c-4b76-aca7-15053c4b6a43" />
 
 ##  Play Now
 
