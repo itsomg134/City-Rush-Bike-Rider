@@ -94,7 +94,7 @@ Want to tweak the game? Open `index.html` in a code editor and modify these vari
 - **`baseSpawnDelay`** – How often cars spawn in frames (default 45).
 - **Colors & Sizes:** Adjust `PLAYER_WIDTH`, `CAR_WIDTH`, or the color codes inside `drawCar()` and `drawBike()`.
 
-## 🐛 Known Issues & Limitations
+##  Known Issues & Limitations
 
 - Very high scores may cause extreme difficulty (cars become very fast). This is intentional as an "endless challenge".
 - On very small mobile screens (< 320px width), the control buttons might overlap slightly. Use landscape mode for the best experience.
