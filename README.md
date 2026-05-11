@@ -99,7 +99,7 @@ Want to tweak the game? Open `index.html` in a code editor and modify these vari
 - Very high scores may cause extreme difficulty (cars become very fast). This is intentional as an "endless challenge".
 - On very small mobile screens (< 320px width), the control buttons might overlap slightly. Use landscape mode for the best experience.
 
-## 🔮 Future Ideas
+##  Future Ideas
 
 - Add sound effects for passing cars and collisions.
 - Introduce different enemy types (trucks, motorcycles) with varying sizes/speeds.
