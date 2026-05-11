@@ -116,13 +116,13 @@ Contributions are welcome! If you have ideas for improvements or find a bug, fee
 4.  Push to the branch (`git push origin feature/amazing-idea`).
 5.  Open a Pull Request.
 
-## 📄 License
+##  License
 
 This project is open-source and available under the **MIT License**. You are free to use, modify, and distribute it as you like.
 
 ---
 
-## 📬 Contact
+##  Contact
 
 Created by **Your Name** – feel free to reach out!
 
