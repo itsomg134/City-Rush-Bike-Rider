@@ -65,7 +65,7 @@ You can run this game on any modern web server or even directly from your local 
     ```
 3.  **Open your browser** and go to `http://localhost:8000`.
 
-## 📁 Project Structure
+##  Project Structure
 
 Since the game is contained in a single HTML file, the project is extremely lightweight:
 
