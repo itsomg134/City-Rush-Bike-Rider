@@ -34,14 +34,14 @@ You can play the game directly in your browser:
     - You get a `+8` point bonus every time a car safely passes below you.
     - The game ends instantly upon collision with any car.
 
-## 🛠️ Technologies Used
+##  Technologies Used
 
 - **HTML5 Canvas** – For rendering the game graphics.
 - **CSS3** – For styling the UI, buttons, and responsive layout.
 - **Vanilla JavaScript (ES6)** – For all game logic, collision detection, movement, and dynamic difficulty.
 - **LocalStorage API** – To save and load the player's best score.
 
-## 🚀 Installation & Running Locally
+##  Installation & Running Locally
 
 You can run this game on any modern web server or even directly from your local file system.
 
